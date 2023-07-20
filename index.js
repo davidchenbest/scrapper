@@ -7,6 +7,9 @@ import { executablePath } from 'puppeteer'
 import MongoConnection from "./lib/mongoConnection.js"
 import MyDate from './lib/MyDate.js'
 import Mailer from './lib/Mailer.js'
+import { logger } from "./modules/logger.js"
+import { getCurrentDirectory } from "./lib/helper.js"
+import fs from 'fs/promises'
 
 
 main()
@@ -27,10 +30,11 @@ async function main() {
             const url = `https://stockx.com/sell/${name}`
             return scapeAndSave({ connection, product: name, browser, url, size, minPrice })
         }))
-
-        return console.log(results)
+        await fs.writeFile(getCurrentDirectory() + '/RESULTS', JSON.stringify(results))
+        await logger('SAVED')
     } catch (error) {
         console.error(error)
+        await logger(error.message)
     }
     finally {
         await Promise.allSettled([
