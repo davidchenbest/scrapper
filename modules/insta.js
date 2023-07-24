@@ -4,7 +4,7 @@ import MongoConnection from "../lib/mongoConnection.js"
 export default async function main(browser) {
     try {
         const url = `https://instagram.com/gotchubro`
-        runPuppet({ browser, url })
+        await runPuppet({ browser, url })
 
     } catch (error) {
         console.error(error)
@@ -33,7 +33,7 @@ async function runPuppet({ browser, url }) {
             const { photos } = post
             if (!photos.length) throw new Error('No Photos ' + link)
             const found = posts.find(post => post.link === link)
-            if (!found || found.photos.length !== photos.length) await connection.insertOne({ link, photos })
+            if (!found || found.photos.length !== photos.length) await connection.insertOne(post)
 
         }
 
