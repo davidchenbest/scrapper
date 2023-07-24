@@ -1,12 +1,15 @@
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import dotenv from "dotenv"
-dotenv.config()
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 puppeteer.use(StealthPlugin())
 import { executablePath } from 'puppeteer'
 import { logger } from "./lib/logger.js"
 import runStockx from './modules/stockx.js'
+import runInsta from './modules/insta.js'
 
+configENV()
 main()
 async function main() {
     const browser = await puppeteer.launch({
@@ -19,6 +22,7 @@ async function main() {
     });
     try {
         await runStockx(browser)
+        // await runInsta(browser)
 
     } catch (error) {
         console.error(error)
@@ -29,4 +33,11 @@ async function main() {
             browser.close(),
         ])
     }
+}
+
+function configENV() {
+    const currentFileUrl = import.meta.url;
+    const currentFilePath = fileURLToPath(currentFileUrl);
+    const root = dirname(currentFilePath)
+    dotenv.config({ path: root + '/.env' })
 }
