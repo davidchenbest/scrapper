@@ -5,7 +5,7 @@ import { logger } from "../lib/logger.js"
 import { getCurrentDirectory, toNumber, wait } from "../lib/helper.js"
 import fs from 'fs/promises'
 
-export default async function main(browser){
+export default async function main(browser) {
     const mongo = new MongoConnection('scrapper', 'stockx')
     try {
         const products = await getProducts()
@@ -78,11 +78,10 @@ async function getPrices(page) {
         const prices = []
         for (const cell of cells) {
             const p = cell.querySelectorAll('p')
-            const size = p[0].innerText
+            const size = p[0].innerText.match(/\d+(\.\d+)?/)[0]
             const price = p[1].innerText
             prices.push({ size, price })
         }
-        console.log(prices);
         return prices
     })
 }
@@ -110,6 +109,7 @@ async function scapeAndSave({ connection, product, browser, url, size, minPrice 
     let results
     if (!isTodaysPrice) {
         results = await runPuppet({ product, browser, url })
+        if (!results || !results[0]) throw new Error('no results')
         //add price
         await connection.updateOne(
             { name: product },
@@ -167,3 +167,22 @@ async function sendEmail({ price, size, name, results }) {
     await mailer.sendEmail(HTML, SUBJECT)
 }
 
+export async function removeNullPrices() {
+    const mongo = new MongoConnection('scrapper', 'stockx')
+    try {
+        const connection = await mongo.getConnection()
+        return await connection.updateMany(
+            { "prices": { $elemMatch: { "price": null } } },
+            { $pull: { "prices": { "price": null } } }
+        )
+
+    } catch (error) {
+        console.error(error)
+        throw error
+    }
+    finally {
+        await Promise.allSettled([
+            mongo.closeConnection(),
+        ])
+    }
+}
