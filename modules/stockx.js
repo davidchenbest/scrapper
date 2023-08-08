@@ -2,7 +2,7 @@ import MongoConnection from "../lib/mongoConnection.js"
 import MyDate from '../lib/MyDate.js'
 import Mailer from '../lib/Mailer.js'
 import { logger } from "../lib/logger.js"
-import { getCurrentDirectory, toNumber, wait } from "../lib/helper.js"
+import { getCurrentDirectory, processArrayInChunks, toNumber, wait } from "../lib/helper.js"
 import fs from 'fs/promises'
 
 export default async function main(browser) {
@@ -10,10 +10,13 @@ export default async function main(browser) {
     try {
         const products = await getProducts()
         const connection = await mongo.getConnection()
-        const results = await Promise.all(products.map(({ name, size, minPrice }) => {
-            const url = `https://stockx.com/sell/${name}`
-            return scapeAndSave({ connection, product: name, browser, url, size, minPrice })
-        }))
+        const asyncOperation = async (chunk) => {
+            return await Promise.all(chunk.map(({ name, size, minPrice }) => {
+                const url = `https://stockx.com/sell/${name}`
+                return scapeAndSave({ connection, product: name, browser, url, size, minPrice })
+            }))
+        }
+        const results = await processArrayInChunks({ array: products, batchSize: 3, asyncOperation })
         await fs.writeFile(getCurrentDirectory() + '/RESULTS', JSON.stringify(results))
         await logger('SAVED')
     } catch (error) {
@@ -28,8 +31,9 @@ export default async function main(browser) {
 }
 
 async function runPuppet({ product, browser, url }) {
+    let page
     try {
-        const page = await browser.newPage();
+        page = await browser.newPage();
         await page.exposeFunction("getProduct", () => product);
         await page.goto(url, { waitUntil: 'load' });
         await wait(1000)
@@ -41,6 +45,9 @@ async function runPuppet({ product, browser, url }) {
         if (!prices.length) throw new Error('no Prices for ' + product)
         return prices
     } catch (error) {
+    }
+    finally {
+        await page.close()
     }
 }
 
