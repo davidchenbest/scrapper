@@ -168,7 +168,7 @@ function statisfyMinPrice({ results, minPrice, size }) {
 }
 
 async function sendEmail({ price, size, name, results }) {
-    const HTML = `<p>${name} ${size} ${price}</p><p>${results}</p>`
+    const HTML = `<p>${name} ${size} ${price}</p><p>${JSON.stringify(results)}</p>`
     const SUBJECT = `Price Alert`
     const mailer = new Mailer()
     await mailer.sendEmail(HTML, SUBJECT)
