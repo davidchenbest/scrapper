@@ -1,0 +1,30 @@
+name: Run Node.js Script
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main  # Change this to the branch you want to trigger the workflow on
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18  # Specify the desired Node.js version
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Node Script
+        env:
+          DAVID: ${{secrets.DAVID}}
+        run: node index.js  # Replace with the actual name of your script
