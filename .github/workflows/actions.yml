@@ -1,0 +1,35 @@
+name: Run Node.js Script
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '*'
+  schedule:
+    - cron: '0 0 */3 * *'
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18  # Specify the desired Node.js version
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Node Script
+        env:
+          MAILER_PASSWORD: ${{secrets.MAILER_PASSWORD}}
+          MAILER_EMAIL: ${{secrets.MAILER_EMAIL}}
+          MAIN_CALENDAR_ID: ${{secrets.MAIN_CALENDAR_ID}}
+          MONGO_URI: ${{secrets.MONGO_URI}}
+        run: node index.js  # Replace with the actual name of your script
