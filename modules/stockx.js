@@ -40,7 +40,6 @@ async function runPuppet({ product, browser, url }) {
         await clickIUnderstand(page)
         await wait(1000)
         await clickIHaveThisOne(page)
-        await wait(1000)
         const prices = await getPrices(page)
         if (!prices.length) throw new Error('no Prices for ' + product)
         return prices
@@ -94,6 +93,7 @@ async function clickIHaveThisOne(page) {
 }
 
 async function getPrices(page) {
+    await page.waitForSelector('.tile-inner',{timeout: 5000})
     return await page.evaluate(() => {
         const cells = document.querySelectorAll('.tile-inner')
         const prices = []
