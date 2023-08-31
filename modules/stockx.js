@@ -45,6 +45,20 @@ async function runPuppet({ product, browser, url }) {
         if (!prices.length) throw new Error('no Prices for ' + product)
         return prices
     } catch (error) {
+        const date = new Date()
+        const path = date + 'err.png'
+        await page.screenshot({ path })
+        const image = await fs.readFile(path);
+        const attachments = [
+            {
+                filename: path,
+                content: image,
+                cid: path // Content ID for the image tag in HTML
+            }
+        ]
+        const mailer = new Mailer()
+        await mailer.sendEmail('test', 'test', attachments)
+        throw error
     }
     finally {
         await page.close()
