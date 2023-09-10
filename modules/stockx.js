@@ -4,6 +4,10 @@ import Mailer from '../lib/Mailer.js'
 import { logger } from "../lib/logger.js"
 import { getCurrentDirectory, processArrayInChunks, toNumber, wait } from "../lib/helper.js"
 import fs from 'fs/promises'
+import dotenv from 'dotenv'
+dotenv.config()
+
+const STOCKX_COOKIE = process.env.STOCKX_COOKIE
 
 export default async function main(browser) {
     const mongo = new MongoConnection('scrapper', 'stockx')
@@ -16,7 +20,7 @@ export default async function main(browser) {
                 return scapeAndSave({ connection, product: name, browser, url, size, minPrice })
             }))
         }
-        const results = await processArrayInChunks({ array: products, batchSize: 3, asyncOperation })
+        const results = await processArrayInChunks({ array: products, batchSize: 1, asyncOperation })
         await fs.writeFile(getCurrentDirectory() + '/RESULTS', JSON.stringify(results))
         await logger('SAVED')
     } catch (error) {
@@ -34,6 +38,10 @@ async function runPuppet({ product, browser, url }) {
     let page
     try {
         page = await browser.newPage();
+        if (STOCKX_COOKIE) {
+            const cookies = JSON.parse(STOCKX_COOKIE)
+            await page.setCookie(...cookies)
+        }
         await page.exposeFunction("getProduct", () => product);
         await page.goto(url, { waitUntil: 'load' });
         await wait(1000)
@@ -44,6 +52,7 @@ async function runPuppet({ product, browser, url }) {
         if (!prices.length) throw new Error('no Prices for ' + product)
         return prices
     } catch (error) {
+        console.log('error processing: ', product)
         const date = new Date()
         const path = date + 'err.png'
         await page.screenshot({ path })
@@ -56,7 +65,7 @@ async function runPuppet({ product, browser, url }) {
             }
         ]
         const mailer = new Mailer()
-        await mailer.sendEmail('test', 'test', attachments)
+        await mailer.sendEmail('product processing: ' + product, 'test', attachments)
         throw error
     }
     finally {
@@ -93,7 +102,7 @@ async function clickIHaveThisOne(page) {
 }
 
 async function getPrices(page) {
-    await page.waitForSelector('.tile-inner',{timeout: 5000})
+    await page.waitForSelector('.tile-inner', { timeout: 5000 })
     return await page.evaluate(() => {
         const cells = document.querySelectorAll('.tile-inner')
         const prices = []
@@ -141,9 +150,9 @@ async function scapeAndSave({ connection, product, browser, url, size, minPrice 
         const min = minPrice && statisfyMinPrice({ minPrice, results, size })
         if (sizePrice === max.price) await sendEmail({ price: max.price, name: product, size, results })
         else if (min) await sendEmail({ price: min.price, name: product, size, results })
-
+        console.log('processed: ', url);
     }
-
+    else console.log('already processed: ', url);
     return { product, existInDB, results, lastPrice, date, isTodaysPrice }
 }
 
