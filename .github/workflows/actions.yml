@@ -32,4 +32,5 @@ jobs:
           MAILER_EMAIL: ${{secrets.MAILER_EMAIL}}
           MAIN_CALENDAR_ID: ${{secrets.MAIN_CALENDAR_ID}}
           MONGO_URI: ${{secrets.MONGO_URI}}
+          STOCKX_COOKIE: ${{secrets.STOCKX_COOKIE}}
         run: node index.js  # Replace with the actual name of your script
