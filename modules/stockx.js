@@ -22,7 +22,7 @@ export default async function main(browser) {
         }
         const results = await processArrayInChunks({ array: products, batchSize: 1, asyncOperation })
         await fs.writeFile(getCurrentDirectory() + '/RESULTS', JSON.stringify(results))
-        await logger('SAVED')
+        await logger(`PROCESSED ${results.length}` )
     } catch (error) {
         console.error(error)
         throw error
@@ -148,11 +148,11 @@ async function scapeAndSave({ connection, product, browser, url, size, minPrice 
         const max = findMaxPrice(results)
         const sizePrice = results.find(r => r?.size === size)
         const min = minPrice && statisfyMinPrice({ minPrice, results, size })
-        if (sizePrice === max.price) await sendEmail({ price: max.price, name: product, size, results })
+        if (sizePrice.price === max.price) await sendEmail({ price: max.price, name: product, size, results })
         else if (min) await sendEmail({ price: min.price, name: product, size, results })
-        console.log('processed: ', url);
+        console.log('processed: ', product);
     }
-    else console.log('already processed: ', url);
+    else console.log('already processed: ', product);
     return { product, existInDB, results, lastPrice, date, isTodaysPrice }
 }
 
